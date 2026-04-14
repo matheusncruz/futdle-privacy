@@ -1,0 +1,28 @@
+scripts/.env
+__pycache__/
+*.pyc
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Arquivos sensíveis de assinatura — NUNCA commitar
+futdle/android/key.properties
+futdle/android/local.properties
+*.jks
+*.keystore
+
+# Flutter/Dart gerados
+futdle/.dart_tool/
+futdle/build/
+futdle/.flutter-plugins
+futdle/.flutter-plugins-dependencies
+futdle/.packages
+futdle/pubspec.lock
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
