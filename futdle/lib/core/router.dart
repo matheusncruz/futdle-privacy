@@ -6,6 +6,8 @@ import '../features/result/screens/result_screen.dart';
 import '../features/game/models/attempt_result.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/auth/screens/nickname_screen.dart';
+import '../features/shield/screens/shield_game_screen.dart';
+import '../features/shield/screens/shield_result_screen.dart';
 import '../main.dart' show appUserHasNickname;
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -38,6 +40,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/shield-game',
+        builder: (context, state) => const ShieldGameScreen(),
+      ),
+      GoRoute(
+        path: '/shield-result',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return ShieldResultScreen(
+            solved: extra['solved'] as bool,
+            wrongCount: extra['wrongCount'] as int,
+            clubName: extra['clubName'] as String,
+            shieldUrl: extra['shieldUrl'] as String,
+            timeSeconds: extra['timeSeconds'] as int? ?? 0,
+          );
+        },
       ),
       GoRoute(
         path: '/result',

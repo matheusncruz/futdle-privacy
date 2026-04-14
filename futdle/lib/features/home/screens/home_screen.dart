@@ -81,6 +81,12 @@ class HomeScreen extends ConsumerWidget {
 
                   const SizedBox(height: 16),
 
+                  // Shield mode button
+                  _ShieldModeButton(
+                    onTap: () => context.push('/shield-game'),
+                  ),
+                  const SizedBox(height: 16),
+
                   // Free mode button
                   _FreeModeButton(
                     onTap: () async {
@@ -361,6 +367,49 @@ class _DailyChallengeButton extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.5,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shield mode button ───────────────────────────────────────────────────────
+
+class _ShieldModeButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ShieldModeButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF60A5FA).withOpacity(0.5), width: 1.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.shield_outlined, color: Color(0xFF60A5FA), size: 20),
+            SizedBox(width: 10),
+            Text(
+              'Modo Escudo',
+              style: TextStyle(
+                color: kTextPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(width: 8),
+            Text(
+              'diário',
+              style: TextStyle(color: kTextSecondary, fontSize: 12),
             ),
           ],
         ),
