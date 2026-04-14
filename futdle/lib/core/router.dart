@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/home/screens/home_screen.dart';
@@ -12,21 +13,26 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) async {
-      // Não redireciona se já está na tela de nickname
-      if (state.matchedLocation == '/nickname') return null;
+      final loc = state.matchedLocation;
+      // Só verifica nickname na tela inicial — não roda em cada navegação
+      if (loc != '/') return null;
 
-      final user = supabase.auth.currentUser;
-      if (user == null) return null;
+      try {
+        final user = supabase.auth.currentUser;
+        if (user == null) return null;
 
-      // Verifica se já tem nickname cadastrado
-      final profile = await supabase
-          .from('user_profiles')
-          .select('nickname')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        final profile = await supabase
+            .from('user_profiles')
+            .select('nickname')
+            .eq('user_id', user.id)
+            .maybeSingle()
+            .timeout(const Duration(seconds: 6));
 
-      if (profile == null) return '/nickname';
-      return null;
+        if (profile == null) return '/nickname';
+        return null;
+      } catch (_) {
+        return null;
+      }
     },
     routes: [
       GoRoute(

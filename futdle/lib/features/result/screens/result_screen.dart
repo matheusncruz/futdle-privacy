@@ -96,7 +96,10 @@ class ResultScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('FUTDLE', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 3)),
         centerTitle: true,
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.home_outlined),
+          onPressed: () => context.go('/'),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

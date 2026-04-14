@@ -44,7 +44,7 @@ class HomeScreen extends ConsumerWidget {
           const Padding(padding: EdgeInsets.only(right: 8), child: EnergyBar()),
           IconButton(
             icon: const Icon(Icons.person_outline, color: kTextSecondary),
-            onPressed: () => context.go('/profile'),
+            onPressed: () => context.push('/profile'),
             tooltip: 'Meu perfil',
           ),
         ],
@@ -64,7 +64,7 @@ class HomeScreen extends ConsumerWidget {
                   todayAsync.when(
                     loading: () => const _LoadingButton(),
                     error: (_, __) => _DailyChallengeButton(
-                      onTap: () => context.go('/game?mode=daily'),
+                      onTap: () => context.push('/game?mode=daily'),
                     ),
                     data: (today) {
                       if (today.played) {
@@ -74,7 +74,7 @@ class HomeScreen extends ConsumerWidget {
                         );
                       }
                       return _DailyChallengeButton(
-                        onTap: () => context.go('/game?mode=daily'),
+                        onTap: () => context.push('/game?mode=daily'),
                       );
                     },
                   ),
@@ -94,7 +94,7 @@ class HomeScreen extends ConsumerWidget {
                         return;
                       }
                       await ref.read(energyProvider.notifier).consume();
-                      if (context.mounted) context.go('/game?mode=free');
+                      if (context.mounted) context.push('/game?mode=free');
                     },
                   ),
                 ],

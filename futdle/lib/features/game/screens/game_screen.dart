@@ -121,18 +121,57 @@ class _GameViewState extends ConsumerState<_GameView> {
       _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdDismissedFullScreenContent: (ad) {
           ad.dispose();
-          if (context.mounted) context.go('/result', extra: resultExtra);
+          if (context.mounted) context.pushReplacement('/result', extra: resultExtra);
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
           ad.dispose();
-          if (context.mounted) context.go('/result', extra: resultExtra);
+          if (context.mounted) context.pushReplacement('/result', extra: resultExtra);
         },
       );
       await _interstitialAd!.show();
     } else {
       // Anúncio não carregou — navega direto
-      if (context.mounted) context.go('/result', extra: resultExtra);
+      if (context.mounted) context.pushReplacement('/result', extra: resultExtra);
     }
+  }
+
+  void _confirmGiveUp(BuildContext context, GameState gameState, GameNotifier notifier) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1F2937),
+        title: const Text('Desistir?', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Você será levado ao resultado sem acertar.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () {
+              Navigator.pop(context);
+              final elapsed = gameState.startedAt != null
+                  ? DateTime.now().difference(gameState.startedAt!).inSeconds
+                  : 0;
+              context.pushReplacement('/result', extra: {
+                'solved': false,
+                'attempts': gameState.attempts.length,
+                'attempts_list': gameState.attempts,
+                'clubName': widget.target.name,
+                'mode': widget.mode,
+                'challengeId': widget.challengeId,
+                'timeSeconds': elapsed,
+              });
+            },
+            child: const Text('Desistir'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _scrollToBottom() {
@@ -194,7 +233,7 @@ class _GameViewState extends ConsumerState<_GameView> {
           if (showAd) {
             _showAdThenNavigate(resultExtra);
           } else {
-            context.go('/result', extra: resultExtra);
+            context.pushReplacement('/result', extra: resultExtra);
           }
         });
       }
@@ -205,6 +244,19 @@ class _GameViewState extends ConsumerState<_GameView> {
         title: const Text('FUTDLE',
             style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 3)),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => context.pop(),
+        ),
+        actions: widget.mode == 'free'
+            ? [
+                TextButton(
+                  onPressed: () => _confirmGiveUp(context, gameState, notifier),
+                  child: const Text('Desistir',
+                      style: TextStyle(color: Colors.redAccent, fontSize: 13)),
+                ),
+              ]
+            : null,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
