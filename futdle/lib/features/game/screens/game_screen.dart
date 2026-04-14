@@ -258,7 +258,8 @@ class _GameViewState extends ConsumerState<_GameView> {
               ]
             : null,
       ),
-      body: Padding(
+      body: SafeArea(
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -293,6 +294,7 @@ class _GameViewState extends ConsumerState<_GameView> {
               ),
           ],
         ),
+      ),
       ),
     );
   }
