@@ -66,6 +66,7 @@ class _GameView extends ConsumerStatefulWidget {
 class _GameViewState extends ConsumerState<_GameView> {
   InterstitialAd? _interstitialAd;
   bool _adReady = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -134,9 +135,22 @@ class _GameViewState extends ConsumerState<_GameView> {
     }
   }
 
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
     _interstitialAd?.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -146,6 +160,11 @@ class _GameViewState extends ConsumerState<_GameView> {
     final notifier = ref.read(gameProvider(widget.target).notifier);
 
     ref.listen(gameProvider(widget.target), (prev, next) {
+      // Rola para baixo sempre que uma nova tentativa é adicionada
+      if (next.attempts.length != (prev?.attempts.length ?? 0)) {
+        _scrollToBottom();
+      }
+
       if (next.gameOver && !(prev?.gameOver ?? false)) {
         // Salva progresso no desafio diário
         if (widget.mode == 'daily' && widget.challengeId != null) {
@@ -193,6 +212,7 @@ class _GameViewState extends ConsumerState<_GameView> {
           children: [
             Expanded(
               child: ListView(
+                controller: _scrollController,
                 children: [
                   if (gameState.revealedAttributes.isNotEmpty)
                     RevealedAttributeRow(
