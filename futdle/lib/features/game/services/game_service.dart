@@ -37,9 +37,10 @@ AttributeFeedback _numericMatch(int attempt, int target) {
   if (attempt == target) {
     return const AttributeFeedback(status: FeedbackStatus.correct);
   }
+  // Se digitei 1920 e o alvo é 1900, preciso ir para baixo (ano menor) → ↓
   return AttributeFeedback(
     status: FeedbackStatus.wrong,
-    direction: attempt > target ? Direction.up : Direction.down,
+    direction: attempt > target ? Direction.down : Direction.up,
   );
 }
 
@@ -51,8 +52,19 @@ AttributeFeedback _numericMatchRounded(int attempt, int target) {
   }
   return AttributeFeedback(
     status: FeedbackStatus.wrong,
-    direction: rAttempt > rTarget ? Direction.up : Direction.down,
+    direction: rAttempt > rTarget ? Direction.down : Direction.up,
   );
+}
+
+/// Retorna a faixa de títulos para exibição na célula
+String titleRange(int value) {
+  if (value == 0) return '0';
+  if (value <= 5) return '1–5';
+  if (value <= 10) return '6–10';
+  if (value <= 20) return '11–20';
+  if (value <= 30) return '21–30';
+  if (value <= 50) return '31–50';
+  return '50+';
 }
 
 AttributeFeedback _colorMatch(String attemptHex, String targetHex) {

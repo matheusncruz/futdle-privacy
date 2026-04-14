@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/attempt_result.dart';
+import '../services/game_service.dart' show titleRange;
 import 'feedback_cell.dart';
 
 class AttemptRow extends StatefulWidget {
@@ -112,13 +113,11 @@ class _AttemptRowState extends State<AttemptRow> with TickerProviderStateMixin {
   Widget _text(AttributeFeedback fb, String value, String label) =>
       FeedbackCell(feedback: fb, textValue: value, label: label);
 
-  int _roundToNearest5(int value) => ((value / 5).round() * 5).clamp(5, 999);
-
   Widget _num(AttributeFeedback fb, int value, String label) =>
       FeedbackCell(feedback: fb, numericValue: value, label: label);
 
   Widget _numRounded(AttributeFeedback fb, int value, String label) =>
-      FeedbackCell(feedback: fb, numericValue: _roundToNearest5(value), label: label);
+      FeedbackCell(feedback: fb, textValue: titleRange(value), label: label);
 
   Widget _color(AttributeFeedback fb, String hex, String label) =>
       FeedbackCell(feedback: fb, colorValue: hex, label: label);
