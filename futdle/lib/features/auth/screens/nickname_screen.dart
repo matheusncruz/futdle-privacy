@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/supabase_client.dart';
 import '../../../core/theme.dart';
+import '../../../main.dart' show appUserHasNickname;
 
 class NicknameScreen extends StatefulWidget {
   const NicknameScreen({super.key});
@@ -43,6 +45,11 @@ class _NicknameScreenState extends State<NicknameScreen> {
         'user_id': userId,
         'nickname': name,
       }, onConflict: 'user_id');
+
+      // Atualiza cache local para evitar redirect na próxima abertura
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_nickname', true);
+      appUserHasNickname = true;
 
       if (mounted) context.go('/');
     } catch (e) {

@@ -2,8 +2,10 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../game/models/club.dart';
 
-const int kGridSize = 8;           // 8x8 = 64 células
-const int kCellsPerWrongGuess = 5; // células reveladas por erro
+const int kGridCols = 6;           // colunas
+const int kGridRows = 16;          // linhas — 6×16 = 96 células
+const int kTotalCells = kGridCols * kGridRows;
+const int kCellsPerWrongGuess = 2; // 2 células reveladas por erro
 const int kMaxWrongGuesses = 8;    // máx erros antes do game over
 
 class ShieldGameState {
@@ -69,15 +71,15 @@ class ShieldGameNotifier extends StateNotifier<ShieldGameState> {
         gameOver: true,
         startedAt: startedAt,
         elapsedSeconds: elapsed,
-        revealedCells: Set.generate(kGridSize * kGridSize, (i) => i),
+        revealedCells: Set.from(List.generate(kTotalCells, (i) => i)),
       );
       return;
     }
 
-    // Resposta errada — revela N células aleatórias ainda cobertas
+    // Resposta errada — revela 1 célula aleatória ainda coberta
     final newWrong = [...state.wrongGuesses, clubName];
     final newRevealed = Set<int>.from(state.revealedCells);
-    final covered = List.generate(kGridSize * kGridSize, (i) => i)
+    final covered = List.generate(kTotalCells, (i) => i)
         .where((i) => !newRevealed.contains(i))
         .toList()
       ..shuffle(_random);
@@ -89,7 +91,7 @@ class ShieldGameNotifier extends StateNotifier<ShieldGameState> {
     final isOver = newWrong.length >= kMaxWrongGuesses;
     if (isOver) {
       // Revela tudo no game over
-      newRevealed.addAll(List.generate(kGridSize * kGridSize, (i) => i));
+      newRevealed.addAll(List.generate(kTotalCells, (i) => i));
     }
 
     state = state.copyWith(

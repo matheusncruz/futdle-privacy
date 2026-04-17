@@ -43,7 +43,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/shield-game',
-        builder: (context, state) => const ShieldGameScreen(),
+        builder: (context, state) {
+          final mode = state.uri.queryParameters['mode'] ?? 'daily';
+          return ShieldGameScreen(mode: mode);
+        },
       ),
       GoRoute(
         path: '/shield-result',

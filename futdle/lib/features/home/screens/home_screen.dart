@@ -6,10 +6,49 @@ import 'package:go_router/go_router.dart';
 import '../../energy/widgets/energy_bar.dart';
 import '../../energy/providers/energy_provider.dart';
 import '../../game/providers/today_progress_provider.dart';
+import '../../shield/providers/shield_free_club_provider.dart';
 import '../../../core/theme.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
+  bool _dailyExpanded = false;
+  bool _freeExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(todayProgressProvider);
+    }
+  }
+
+  void _toggleDaily() => setState(() {
+        _dailyExpanded = !_dailyExpanded;
+        if (_dailyExpanded) _freeExpanded = false;
+      });
+
+  void _toggleFree() => setState(() {
+        _freeExpanded = !_freeExpanded;
+        if (_freeExpanded) _dailyExpanded = false;
+      });
 
   String _formattedDate() {
     final now = DateTime.now();
@@ -17,11 +56,11 @@ class HomeScreen extends ConsumerWidget {
       'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
       'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
     ];
-    return 'Desafio de ${now.day} de ${months[now.month - 1]}';
+    return '${now.day} de ${months[now.month - 1]}';
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final todayAsync = ref.watch(todayProgressProvider);
 
     return Scaffold(
@@ -52,56 +91,120 @@ class HomeScreen extends ConsumerWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // ── Hero section ──────────────────────────────────────────────
             _HeroSection(dateLabel: _formattedDate()),
 
-            // ── Content ───────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
               child: Column(
                 children: [
-                  // Daily challenge button / done card
-                  todayAsync.when(
-                    loading: () => const _LoadingButton(),
-                    error: (_, __) => _DailyChallengeButton(
-                      onTap: () => context.push('/game?mode=daily'),
-                    ),
-                    data: (today) {
-                      if (today.played) {
-                        return _DailyDoneCard(
-                          solved: today.solved,
-                          attempts: today.attempts,
-                        );
-                      }
-                      return _DailyChallengeButton(
-                        onTap: () => context.push('/game?mode=daily'),
-                      );
-                    },
+                  // ── Desafios Diários ──────────────────────────────────────
+                  _CategoryCard(
+                    icon: Icons.calendar_today_rounded,
+                    title: 'Desafios Diários',
+                    subtitle: 'Um novo desafio todo dia',
+                    accentColor: kGreenLight,
+                    expanded: _dailyExpanded,
+                    onTap: _toggleDaily,
+                    children: [
+                      // Modo Clássico diário
+                      todayAsync.when(
+                        loading: () => const _SubModeLoading(),
+                        error: (_, __) => _SubModeButton(
+                          icon: Icons.grid_view_rounded,
+                          label: 'Modo Clássico',
+                          description: 'Adivinhe pelas características',
+                          color: kGreenLight,
+                          onTap: () => context.push('/game?mode=daily'),
+                        ),
+                        data: (today) => today.played
+                            ? _DailyDoneCard(
+                                solved: today.solved,
+                                attempts: today.attempts,
+                              )
+                            : _SubModeButton(
+                                icon: Icons.grid_view_rounded,
+                                label: 'Modo Clássico',
+                                description: 'Adivinhe pelas características',
+                                color: kGreenLight,
+                                onTap: () async {
+                                  await context.push('/game?mode=daily');
+                                  ref.invalidate(todayProgressProvider);
+                                },
+                              ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Modo Escudo diário
+                      _SubModeButton(
+                        icon: Icons.shield_outlined,
+                        label: 'Modo Escudo',
+                        description: 'Adivinhe pelo escudo do clube',
+                        color: const Color(0xFF60A5FA),
+                        onTap: () => context.push('/shield-game?mode=daily'),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Shield mode button
-                  _ShieldModeButton(
-                    onTap: () => context.push('/shield-game'),
-                  ),
-                  const SizedBox(height: 16),
+                  // ── Modos Livres ──────────────────────────────────────────
+                  _CategoryCard(
+                    icon: Icons.shuffle_rounded,
+                    title: 'Modos Livres',
+                    subtitle: 'Jogue à vontade • −1 energia por partida',
+                    accentColor: kYellow,
+                    expanded: _freeExpanded,
+                    onTap: _toggleFree,
+                    children: [
+                      // Modo Clássico livre
+                      _SubModeButton(
+                        icon: Icons.grid_view_rounded,
+                        label: 'Modo Clássico',
+                        description: 'Adivinhe pelas características',
+                        color: kGreenLight,
+                        onTap: () async {
+                          final energy = ref.read(energyProvider).valueOrNull;
+                          if (energy == null || !energy.canPlay) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Sem energia! Aguarde a recarga.'),
+                              ),
+                            );
+                            return;
+                          }
+                          await ref.read(energyProvider.notifier).consume();
+                          if (context.mounted) context.push('/game?mode=free');
+                        },
+                      ),
 
-                  // Free mode button
-                  _FreeModeButton(
-                    onTap: () async {
-                      final energy = ref.read(energyProvider).valueOrNull;
-                      if (energy == null || !energy.canPlay) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Sem energia! Aguarde a recarga.'),
-                          ),
-                        );
-                        return;
-                      }
-                      await ref.read(energyProvider.notifier).consume();
-                      if (context.mounted) context.push('/game?mode=free');
-                    },
+                      const SizedBox(height: 10),
+
+                      // Modo Escudo livre
+                      _SubModeButton(
+                        icon: Icons.shield_outlined,
+                        label: 'Modo Escudo',
+                        description: 'Adivinhe pelo escudo do clube',
+                        color: const Color(0xFF60A5FA),
+                        onTap: () async {
+                          final energy = ref.read(energyProvider).valueOrNull;
+                          if (energy == null || !energy.canPlay) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Sem energia! Aguarde a recarga.'),
+                              ),
+                            );
+                            return;
+                          }
+                          await ref.read(energyProvider.notifier).consume();
+                          // Invalida o cache para sortear um novo clube a cada partida
+                          ref.invalidate(shieldFreeClubProvider);
+                          if (context.mounted) {
+                            context.push('/shield-game?mode=free');
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -136,7 +239,7 @@ class _HeroSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           child: Column(
             children: [
-              // Glowing soccer ball
+              // Bola com brilho
               Stack(
                 alignment: Alignment.center,
                 children: [
@@ -180,7 +283,6 @@ class _HeroSection extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // FUTDLE title with glow
               ShaderMask(
                 shaderCallback: (bounds) => const LinearGradient(
                   colors: [kGreenLight, Color(0xFF86efac)],
@@ -193,17 +295,13 @@ class _HeroSection extends StatelessWidget {
                     letterSpacing: 10,
                     color: Colors.white,
                     shadows: [
-                      Shadow(
-                        color: Color(0xFF22c55e),
-                        blurRadius: 24,
-                      ),
+                      Shadow(color: Color(0xFF22c55e), blurRadius: 24),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 6),
 
-              // Tagline
               Text(
                 'O Wordle do Futebol',
                 style: TextStyle(
@@ -215,15 +313,12 @@ class _HeroSection extends StatelessWidget {
               ),
               const SizedBox(height: 14),
 
-              // Date chip
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                 decoration: BoxDecoration(
                   color: kGreenLight.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: kGreenLight.withOpacity(0.3),
-                  ),
+                  border: Border.all(color: kGreenLight.withOpacity(0.3)),
                 ),
                 child: Text(
                   dateLabel,
@@ -243,221 +338,212 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-// ── Decorative attribute preview row ────────────────────────────────────────
+// ── Category Card (expansível) ───────────────────────────────────────────────
 
-class _AttributePreviewRow extends StatelessWidget {
-  const _AttributePreviewRow();
+class _CategoryCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accentColor;
+  final bool expanded;
+  final VoidCallback onTap;
+  final List<Widget> children;
 
-  static const _cells = [
-    (color: Color(0xFF22c55e), label: '🟩'),
-    (color: Color(0xFFEAB308), label: '🟨'),
-    (color: Color(0xFFEF4444), label: '🟥'),
-    (color: Color(0xFF22c55e), label: '🟩'),
-    (color: Color(0xFFEF4444), label: '🟥'),
-    (color: Color(0xFFEAB308), label: '🟨'),
-    (color: Color(0xFF22c55e), label: '🟩'),
-    (color: Color(0xFF22c55e), label: '🟩'),
-  ];
+  const _CategoryCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accentColor,
+    required this.expanded,
+    required this.onTap,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          'Como funciona',
-          style: TextStyle(
-            fontSize: 11,
-            color: kTextSecondary,
-            letterSpacing: 1.5,
-            fontWeight: FontWeight.w600,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: expanded
+              ? accentColor.withOpacity(0.45)
+              : const Color(0xFF1F2937),
+          width: 1.5,
+        ),
+        boxShadow: expanded
+            ? [
+                BoxShadow(
+                  color: accentColor.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [],
+      ),
+      child: Column(
+        children: [
+          // Header (sempre visível)
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: accentColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: accentColor, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            color: kTextPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            color: kTextSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: accentColor,
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: _cells.map((c) {
-            return Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: BoxDecoration(
-                color: c.color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: c.color.withOpacity(0.5), width: 1.2),
-              ),
-              child: Center(
-                child: Text(c.label, style: const TextStyle(fontSize: 14)),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '🟩 Certo  🟨 Parcial  🟥 Errado',
-          style: TextStyle(fontSize: 11, color: kTextSecondary),
-        ),
-      ],
+
+          // Conteúdo expansível
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(children: children),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-// ── Loading button placeholder ───────────────────────────────────────────────
+// ── Sub-mode button ──────────────────────────────────────────────────────────
 
-class _LoadingButton extends StatelessWidget {
-  const _LoadingButton();
+class _SubModeButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String description;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _SubModeButton({
+    required this.icon,
+    required this.label,
+    required this.description,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: kBackground,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: kTextPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        color: kTextSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios_rounded, color: color, size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Sub-mode loading ─────────────────────────────────────────────────────────
+
+class _SubModeLoading extends StatelessWidget {
+  const _SubModeLoading();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 60,
+      height: 56,
       decoration: BoxDecoration(
-        color: kSurface,
-        borderRadius: BorderRadius.circular(14),
+        color: kBackground,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: const Center(
         child: SizedBox(
-          width: 20,
-          height: 20,
+          width: 18,
+          height: 18,
           child: CircularProgressIndicator(strokeWidth: 2, color: kGreenLight),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Daily challenge gradient button ─────────────────────────────────────────
-
-class _DailyChallengeButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _DailyChallengeButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 60,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF16a34a), Color(0xFF22c55e)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: kGreenLight.withOpacity(0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.sports_soccer, color: Colors.white, size: 22),
-            SizedBox(width: 10),
-            Text(
-              'Desafio Diário',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Shield mode button ───────────────────────────────────────────────────────
-
-class _ShieldModeButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _ShieldModeButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF60A5FA).withOpacity(0.5), width: 1.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.shield_outlined, color: Color(0xFF60A5FA), size: 20),
-            SizedBox(width: 10),
-            Text(
-              'Modo Escudo',
-              style: TextStyle(
-                color: kTextPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(width: 8),
-            Text(
-              'diário',
-              style: TextStyle(color: kTextSecondary, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Free mode outlined button ────────────────────────────────────────────────
-
-class _FreeModeButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _FreeModeButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: kGreenLight.withOpacity(0.45), width: 1.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.shuffle, color: kGreenLight, size: 20),
-            SizedBox(width: 10),
-            Text(
-              'Modo Livre',
-              style: TextStyle(
-                color: kTextPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(width: 8),
-            Text(
-              '−1 energia',
-              style: TextStyle(
-                color: kTextSecondary,
-                fontSize: 12,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -469,7 +555,6 @@ class _FreeModeButton extends StatelessWidget {
 class _DailyDoneCard extends StatefulWidget {
   final bool solved;
   final int attempts;
-
   const _DailyDoneCard({required this.solved, required this.attempts});
 
   @override
@@ -515,24 +600,16 @@ class _DailyDoneCardState extends State<_DailyDoneCard> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: kSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withOpacity(0.4), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withOpacity(0.12),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: kBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withOpacity(0.35), width: 1.5),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           children: [
-            // Colored top strip
             Container(
-              height: 4,
+              height: 3,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: widget.solved
@@ -542,76 +619,52 @@ class _DailyDoneCardState extends State<_DailyDoneCard> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: accent.withOpacity(0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          widget.solved ? Icons.emoji_events : Icons.sports_soccer,
-                          color: widget.solved ? kYellow : kTextSecondary,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.solved ? 'Desafio concluído!' : 'Não foi dessa vez',
-                              style: const TextStyle(
-                                color: kTextPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.solved
-                                  ? '${widget.attempts} ${widget.attempts == 1 ? 'tentativa' : 'tentativas'}'
-                                  : 'Tente novamente amanhã',
-                              style: const TextStyle(color: kTextSecondary, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  Icon(
+                    widget.solved ? Icons.emoji_events : Icons.sports_soccer,
+                    color: widget.solved ? kYellow : kTextSecondary,
+                    size: 22,
                   ),
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: kBackground,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.timer_outlined, size: 15, color: kTextSecondary),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Próximo desafio em ',
-                          style: TextStyle(color: kTextSecondary, fontSize: 13),
-                        ),
                         Text(
-                          _format(_timeLeft),
+                          widget.solved ? 'Concluído!' : 'Não foi dessa vez',
                           style: const TextStyle(
                             color: kTextPrimary,
-                            fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            fontFeatures: [FontFeature.tabularFigures()],
+                            fontSize: 14,
                           ),
+                        ),
+                        Text(
+                          widget.solved
+                              ? '${widget.attempts} tentativa${widget.attempts == 1 ? '' : 's'}'
+                              : 'Tente novamente amanhã',
+                          style: const TextStyle(
+                              color: kTextSecondary, fontSize: 12),
                         ),
                       ],
                     ),
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.timer_outlined,
+                          size: 13, color: kTextSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        _format(_timeLeft),
+                        style: const TextStyle(
+                          color: kTextPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

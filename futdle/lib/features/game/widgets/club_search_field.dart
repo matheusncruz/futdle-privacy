@@ -29,25 +29,26 @@ class _ClubSearchFieldState extends ConsumerState<ClubSearchField> {
     final suggestions = ref.watch(clubSearchProvider(query));
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          decoration: const InputDecoration(
-            hintText: 'Digite o nome do time...',
-            prefixIcon: Icon(Icons.search, color: kTextSecondary),
-          ),
-          onChanged: (_) => setState(() {}),
-        ),
+        // Lista cresce para CIMA — fica visível acima do teclado
         if (suggestions.isNotEmpty)
           Container(
-            constraints: const BoxConstraints(maxHeight: 200),
+            constraints: const BoxConstraints(maxHeight: 220),
             decoration: BoxDecoration(
               color: kSurface,
               borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
             child: ListView.builder(
               shrinkWrap: true,
+              reverse: false,
               itemCount: suggestions.length,
               itemBuilder: (context, i) {
                 final club = suggestions[i];
@@ -68,6 +69,15 @@ class _ClubSearchFieldState extends ConsumerState<ClubSearchField> {
               },
             ),
           ),
+        TextField(
+          controller: _controller,
+          focusNode: _focusNode,
+          decoration: const InputDecoration(
+            hintText: 'Digite o nome do time...',
+            prefixIcon: Icon(Icons.search, color: kTextSecondary),
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
       ],
     );
   }
