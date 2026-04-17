@@ -7,6 +7,7 @@ import '../../energy/widgets/energy_bar.dart';
 import '../../energy/providers/energy_provider.dart';
 import '../../game/providers/today_progress_provider.dart';
 import '../../shield/providers/shield_free_club_provider.dart';
+import '../../shield/providers/shield_today_progress_provider.dart';
 import '../../../core/theme.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -136,12 +137,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       const SizedBox(height: 10),
 
                       // Modo Escudo diário
-                      _SubModeButton(
-                        icon: Icons.shield_outlined,
-                        label: 'Modo Escudo',
-                        description: 'Adivinhe pelo escudo do clube',
-                        color: const Color(0xFF60A5FA),
-                        onTap: () => context.push('/shield-game?mode=daily'),
+                      ref.watch(shieldTodayProgressProvider).when(
+                        loading: () => const _SubModeLoading(),
+                        error: (_, __) => _SubModeButton(
+                          icon: Icons.shield_outlined,
+                          label: 'Modo Escudo',
+                          description: 'Adivinhe pelo escudo do clube',
+                          color: const Color(0xFF60A5FA),
+                          onTap: () async {
+                            await context.push('/shield-game?mode=daily');
+                            ref.invalidate(shieldTodayProgressProvider);
+                          },
+                        ),
+                        data: (shieldToday) => shieldToday.played
+                            ? _ShieldDoneCard(
+                                solved: shieldToday.solved,
+                                wrongCount: shieldToday.wrongCount,
+                              )
+                            : _SubModeButton(
+                                icon: Icons.shield_outlined,
+                                label: 'Modo Escudo',
+                                description: 'Adivinhe pelo escudo do clube',
+                                color: const Color(0xFF60A5FA),
+                                onTap: () async {
+                                  await context.push('/shield-game?mode=daily');
+                                  ref.invalidate(shieldTodayProgressProvider);
+                                },
+                              ),
                       ),
                     ],
                   ),
@@ -551,6 +573,81 @@ class _SubModeLoading extends StatelessWidget {
 }
 
 // ── Daily done card ──────────────────────────────────────────────────────────
+
+// ── Shield daily done card ───────────────────────────────────────────────────
+
+class _ShieldDoneCard extends StatelessWidget {
+  final bool solved;
+  final int wrongCount;
+  const _ShieldDoneCard({required this.solved, required this.wrongCount});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = solved ? const Color(0xFF60A5FA) : kRed;
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: kBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withOpacity(0.35), width: 1.5),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          children: [
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: solved
+                      ? [const Color(0xFF1d4ed8), const Color(0xFF60A5FA)]
+                      : [const Color(0xFFb91c1c), kRed],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Row(
+                children: [
+                  Icon(
+                    solved ? Icons.shield : Icons.shield_outlined,
+                    color: solved ? const Color(0xFF60A5FA) : kTextSecondary,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          solved ? 'Escudo acertado!' : 'Não foi dessa vez',
+                          style: const TextStyle(
+                            color: kTextPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          solved
+                              ? '$wrongCount erro${wrongCount == 1 ? '' : 's'}'
+                              : 'Tente novamente amanhã',
+                          style: const TextStyle(color: kTextSecondary, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.lock_outline, color: kTextSecondary, size: 16),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Classic daily done card ───────────────────────────────────────────────────
 
 class _DailyDoneCard extends StatefulWidget {
   final bool solved;

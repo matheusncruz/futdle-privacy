@@ -33,6 +33,43 @@ class EnergyNotifier extends AsyncNotifier<EnergyState> {
     ).withRegen();
   }
 
+  /// Chamado pelo ticker da EnergyBar quando nextRegenIn chega a zero.
+  Future<void> triggerRegen() async {
+    final current = state.valueOrNull;
+    if (current == null || current.isFull) return;
+
+    final regenned = current.withRegen();
+    if (regenned.current == current.current) return; // ainda não é hora
+
+    state = AsyncData(regenned);
+
+    final userId = supabase.auth.currentUser?.id;
+    if (userId != null) {
+      await supabase.from('user_energy').update({
+        'current_energy': regenned.current,
+        'last_regen_at': regenned.lastRegenAt.toIso8601String(),
+      }).eq('user_id', userId);
+    }
+  }
+
+  Future<void> addEnergy(int amount) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    final newState = EnergyState(
+      current: (current.current + amount).clamp(0, kMaxEnergy),
+      lastRegenAt: current.lastRegenAt,
+    );
+    state = AsyncData(newState);
+
+    final userId = supabase.auth.currentUser?.id;
+    if (userId != null) {
+      await supabase.from('user_energy').update({
+        'current_energy': newState.current,
+      }).eq('user_id', userId);
+    }
+  }
+
   Future<bool> consume() async {
     final current = state.valueOrNull;
     if (current == null || !current.canPlay) return false;

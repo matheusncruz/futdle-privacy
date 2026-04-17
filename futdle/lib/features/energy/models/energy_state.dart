@@ -17,4 +17,14 @@ class EnergyState {
   }
 
   bool get canPlay => current > 0;
+
+  bool get isFull => current >= kMaxEnergy;
+
+  /// Tempo restante até a próxima recarga de 1 energia.
+  Duration get nextRegenIn {
+    if (isFull) return Duration.zero;
+    final nextRegen = lastRegenAt.add(Duration(minutes: kEnergyRegenMinutes));
+    final diff = nextRegen.difference(DateTime.now());
+    return diff.isNegative ? Duration.zero : diff;
+  }
 }

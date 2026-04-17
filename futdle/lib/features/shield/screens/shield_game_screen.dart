@@ -7,7 +7,9 @@ import '../../game/widgets/club_search_field.dart';
 import '../providers/shield_game_provider.dart';
 import '../providers/shield_daily_challenge_provider.dart';
 import '../providers/shield_free_club_provider.dart';
+import '../providers/shield_today_progress_provider.dart';
 import '../widgets/shield_reveal_widget.dart';
+import '../../../core/supabase_client.dart';
 
 class ShieldGameScreen extends ConsumerWidget {
   final String mode; // 'daily' ou 'free'
@@ -74,6 +76,23 @@ class _ShieldGameView extends ConsumerWidget {
 
     ref.listen(shieldGameProvider(club), (prev, next) {
       if (next.gameOver && !(prev?.gameOver ?? false)) {
+        // Salva progresso do desafio diário
+        if (mode == 'daily') {
+          final challengeId = ref
+              .read(shieldTodayProgressProvider)
+              .valueOrNull
+              ?.challengeId;
+          if (challengeId != null) {
+            _saveShieldProgress(
+              challengeId: challengeId,
+              solved: next.solved,
+              wrongCount: next.wrongCount,
+              timeSeconds: next.elapsedSeconds,
+            );
+          }
+          ref.invalidate(shieldTodayProgressProvider);
+        }
+
         Future.delayed(const Duration(milliseconds: 800), () {
           if (!context.mounted) return;
           context.pushReplacement('/shield-result', extra: {
@@ -169,6 +188,29 @@ class _ShieldGameView extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _saveShieldProgress({
+  required String challengeId,
+  required bool solved,
+  required int wrongCount,
+  required int timeSeconds,
+}) async {
+  final userId = supabase.auth.currentUser?.id;
+  if (userId == null) return;
+  try {
+    await supabase.from('shield_user_progress').upsert(
+      {
+        'user_id': userId,
+        'challenge_id': challengeId,
+        'solved': solved,
+        'wrong_count': wrongCount,
+        'time_seconds': timeSeconds,
+        'finished_at': DateTime.now().toIso8601String(),
+      },
+      onConflict: 'user_id,challenge_id',
+    );
+  } catch (_) {}
 }
 
 class _RevealProgressBar extends StatelessWidget {
