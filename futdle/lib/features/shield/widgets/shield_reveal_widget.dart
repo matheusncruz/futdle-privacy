@@ -30,9 +30,10 @@ class ShieldRevealWidget extends StatelessWidget {
           _ShieldImage(shieldUrl: shieldUrl, width: width, height: height),
 
           // Camada 2 (cima): silhueta PRETA clipeada apenas nas células NÃO reveladas.
-          // Conforme células são reveladas o preto some → colorido aparece.
           // O ColorFiltered preserva a transparência do PNG →
           // o preto só existe dentro do shape real do escudo.
+          // As células selecionadas para revelar são pré-filtradas pelo provider
+          // para garantir que sempre estejam dentro do escudo (ver _analyzeShieldCells).
           ClipPath(
             clipper: _UnrevealedCellsClipper(
               revealedCells: revealedCells,
@@ -106,21 +107,20 @@ class _UnrevealedCellsClipper extends CustomClipper<Path> {
     final path = Path();
     final cellW = size.width / cols;
     final cellH = size.height / rows;
-    const gap = 0.0; // sem gap — sem vazamento de cor entre células
 
     for (int i = 0; i < cols * rows; i++) {
       if (revealedCells.contains(i)) continue; // revelada → sem preto
       final row = i ~/ cols;
       final col = i % cols;
-      path.addRRect(RRect.fromRectAndRadius(
+      // Sem arredondamento — evita o "+" nas interseções entre células
+      path.addRect(
         Rect.fromLTWH(
-          col * cellW + gap / 2,
-          row * cellH + gap / 2,
-          cellW - gap,
-          cellH - gap,
+          col * cellW,
+          row * cellH,
+          cellW,
+          cellH,
         ),
-        const Radius.circular(2),
-      ));
+      );
     }
     return path;
   }

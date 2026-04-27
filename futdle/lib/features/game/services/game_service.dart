@@ -31,8 +31,6 @@ AttributeFeedback _leagueMatch(Club attempt, Club target) {
   return const AttributeFeedback(status: FeedbackStatus.wrong);
 }
 
-int _roundToNearest5(int value) => ((value / 5).round() * 5).clamp(5, 999);
-
 AttributeFeedback _numericMatch(int attempt, int target) {
   if (attempt == target) {
     return const AttributeFeedback(status: FeedbackStatus.correct);
@@ -45,14 +43,13 @@ AttributeFeedback _numericMatch(int attempt, int target) {
 }
 
 AttributeFeedback _numericMatchRounded(int attempt, int target) {
-  final rAttempt = _roundToNearest5(attempt);
-  final rTarget = _roundToNearest5(target);
-  if (rAttempt == rTarget) {
+  // Compara pelo mesmo bucket exibido na tela — sem arredondamento extra
+  if (titleRange(attempt) == titleRange(target)) {
     return const AttributeFeedback(status: FeedbackStatus.correct);
   }
   return AttributeFeedback(
     status: FeedbackStatus.wrong,
-    direction: rAttempt > rTarget ? Direction.down : Direction.up,
+    direction: attempt > target ? Direction.down : Direction.up,
   );
 }
 

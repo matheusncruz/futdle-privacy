@@ -106,6 +106,8 @@ class GameNotifier extends StateNotifier<GameState> {
   void reset() => state = const GameState();
 }
 
-final gameProvider = StateNotifierProvider.family<GameNotifier, GameState, Club>(
+// autoDispose: descarta o notifier quando a tela de jogo é fechada,
+// evitando que partidas antigas fiquem em cache com gameOver=true.
+final gameProvider = StateNotifierProvider.autoDispose.family<GameNotifier, GameState, Club>(
   (ref, target) => GameNotifier(target),
 );

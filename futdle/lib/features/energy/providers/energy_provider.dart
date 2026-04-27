@@ -74,7 +74,9 @@ class EnergyNotifier extends AsyncNotifier<EnergyState> {
     final current = state.valueOrNull;
     if (current == null || !current.canPlay) return false;
 
-    final newState = EnergyState(current: current.current - 1, lastRegenAt: current.lastRegenAt);
+    // Cada partida custa 1 coração completo (kEnergyPerHeart unidades),
+    // tornando a queda de energia visivelmente perceptível na UI.
+    final newState = EnergyState(current: current.current - kEnergyPerHeart, lastRegenAt: current.lastRegenAt);
     state = AsyncData(newState);
 
     final userId = supabase.auth.currentUser?.id;

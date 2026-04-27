@@ -15,6 +15,7 @@ class ResultScreen extends ConsumerWidget {
   final String mode;
   final String? challengeId;
   final int timeSeconds;
+  final int streak;
 
   const ResultScreen({
     super.key,
@@ -25,6 +26,7 @@ class ResultScreen extends ConsumerWidget {
     required this.mode,
     this.challengeId,
     this.timeSeconds = 0,
+    this.streak = 0,
   });
 
   String _formatTime(int seconds) {
@@ -78,12 +80,15 @@ class ResultScreen extends ConsumerWidget {
     final resultLine = solved
         ? 'Acertei em $attempts tentativa${attempts == 1 ? '' : 's'} (${_formatTime(timeSeconds)})!'
         : 'Não acertei hoje 😢';
+    final streakLine =
+        (mode == 'daily' && solved && streak > 0) ? '🔥 $streak dia${streak == 1 ? '' : 's'} acertando!' : null;
 
     return [
       'Futdle $today',
       '⚽ $clubName',
       if (grid.isNotEmpty) grid,
       resultLine,
+      if (streakLine != null) streakLine,
       'Jogue você também! #Futdle',
     ].join('\n');
   }
@@ -128,6 +133,10 @@ class ResultScreen extends ConsumerWidget {
                 style: const TextStyle(fontSize: 14, color: kTextSecondary),
               ),
             ],
+            if (mode == 'daily' && streak > 0) ...[
+              const SizedBox(height: 20),
+              _StreakCard(streak: streak, solved: solved),
+            ],
             const SizedBox(height: 28),
 
             // Leaderboard — somente no desafio diário
@@ -159,6 +168,61 @@ class ResultScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StreakCard extends StatelessWidget {
+  final int streak;
+  final bool solved;
+  const _StreakCard({required this.streak, required this.solved});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = solved ? const Color(0xFFf97316) : kTextSecondary;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F2937),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.35), width: 1.5),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '🔥',
+            style: const TextStyle(fontSize: 28),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                solved
+                    ? 'Você está a $streak dia${streak == 1 ? '' : 's'} acertando!'
+                    : 'Sequência encerrada',
+                style: TextStyle(
+                  color: solved ? const Color(0xFFfb923c) : kTextSecondary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              if (!solved && streak > 0)
+                Text(
+                  'Sua sequência era de $streak dia${streak == 1 ? '' : 's'}',
+                  style: const TextStyle(color: kTextSecondary, fontSize: 12),
+                ),
+              if (solved)
+                const Text(
+                  'Continue jogando para aumentar!',
+                  style: TextStyle(color: kTextSecondary, fontSize: 12),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

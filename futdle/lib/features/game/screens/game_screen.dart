@@ -174,6 +174,39 @@ class _GameViewState extends ConsumerState<_GameView> {
     );
   }
 
+  Future<void> _onGameOver(GameState next) async {
+    int streak = 0;
+    if (widget.mode == 'daily' && widget.challengeId != null) {
+      streak = await ProgressService.saveResult(
+        challengeId: widget.challengeId!,
+        solved: next.solved,
+        attemptsCount: next.attempts.length,
+        timeSeconds: next.elapsedSeconds,
+      );
+    }
+
+    final resultExtra = {
+      'solved': next.solved,
+      'attempts': next.attempts.length,
+      'attempts_list': next.attempts,
+      'clubName': widget.target.name,
+      'mode': widget.mode,
+      'challengeId': widget.challengeId,
+      'timeSeconds': next.elapsedSeconds,
+      'streak': streak,
+    };
+
+    final showAd = widget.mode == 'daily' && next.solved;
+
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    if (showAd) {
+      _showAdThenNavigate(resultExtra);
+    } else {
+      context.pushReplacement('/result', extra: resultExtra);
+    }
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -205,37 +238,7 @@ class _GameViewState extends ConsumerState<_GameView> {
       }
 
       if (next.gameOver && !(prev?.gameOver ?? false)) {
-        // Salva progresso no desafio diário
-        if (widget.mode == 'daily' && widget.challengeId != null) {
-          ProgressService.saveResult(
-            challengeId: widget.challengeId!,
-            solved: next.solved,
-            attemptsCount: next.attempts.length,
-            timeSeconds: next.elapsedSeconds,
-          );
-        }
-
-        final resultExtra = {
-          'solved': next.solved,
-          'attempts': next.attempts.length,
-          'attempts_list': next.attempts,
-          'clubName': widget.target.name,
-          'mode': widget.mode,
-          'challengeId': widget.challengeId,
-          'timeSeconds': next.elapsedSeconds,
-        };
-
-        // Mostra anúncio somente ao acertar o desafio diário
-        final showAd = widget.mode == 'daily' && next.solved;
-
-        Future.delayed(const Duration(milliseconds: 600), () {
-          if (!context.mounted) return;
-          if (showAd) {
-            _showAdThenNavigate(resultExtra);
-          } else {
-            context.pushReplacement('/result', extra: resultExtra);
-          }
-        });
+        _onGameOver(next);
       }
     });
 

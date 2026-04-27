@@ -1,5 +1,6 @@
 import 'dart:math';
 import '../../../core/supabase_client.dart';
+import 'streak_service.dart';
 
 class ProgressService {
   /// Retorna o nickname existente ou cria um novo ("Craque#XXXX")
@@ -26,15 +27,16 @@ class ProgressService {
     return nickname;
   }
 
-  /// Salva ou atualiza o resultado do desafio diário
-  static Future<void> saveResult({
+  /// Salva ou atualiza o resultado do desafio diário.
+  /// Retorna o streak atual após a atualização (0 se falhou).
+  static Future<int> saveResult({
     required String challengeId,
     required bool solved,
     required int attemptsCount,
     required int timeSeconds,
   }) async {
     final userId = supabase.auth.currentUser?.id;
-    if (userId == null) return;
+    if (userId == null) return 0;
 
     // Garante que o perfil existe antes de salvar
     await getOrCreateNickname();
@@ -51,5 +53,7 @@ class ProgressService {
       },
       onConflict: 'user_id,challenge_id',
     );
+
+    return StreakService.update(solved: solved);
   }
 }

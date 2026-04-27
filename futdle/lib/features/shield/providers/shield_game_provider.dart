@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:math';
+import 'dart:ui' as ui;
+import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../game/models/club.dart';
 
@@ -6,11 +9,76 @@ const int kGridCols = 6;           // colunas
 const int kGridRows = 16;          // linhas — 6×16 = 96 células
 const int kTotalCells = kGridCols * kGridRows;
 const int kCellsPerWrongGuess = 2; // 2 células reveladas por erro
-const int kMaxWrongGuesses = 8;    // máx erros antes do game over
+const int kMaxWrongGuesses = 20;   // máx erros antes do game over
+
+// ── Células válidas ──────────────────────────────────────────────────────────
+
+Set<int> _allCells() => Set.from(List.generate(kTotalCells, (i) => i));
+
+/// Carrega o PNG do escudo e retorna os índices das células da grade que
+/// possuem ao menos um pixel opaco (alpha > 20).
+/// Isso garante que só revelamos células visualmente dentro do escudo.
+/// Em caso de erro (timeout, SVG, rede, etc.) retorna todas as células.
+Future<Set<int>> _analyzeShieldCells(String url) async {
+  try {
+    final completer = Completer<ui.Image>();
+    final stream = NetworkImage(url).resolve(const ImageConfiguration());
+    late ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (ImageInfo info, bool _) {
+        stream.removeListener(listener);
+        if (!completer.isCompleted) completer.complete(info.image);
+      },
+      onError: (Object error, StackTrace? _) {
+        stream.removeListener(listener);
+        if (!completer.isCompleted) completer.completeError(error);
+      },
+    );
+    stream.addListener(listener);
+
+    final image =
+        await completer.future.timeout(const Duration(seconds: 15));
+    final byteData =
+        await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (byteData == null) return _allCells();
+
+    final bytes = byteData.buffer.asUint8List();
+    final imgW = image.width;
+    final imgH = image.height;
+    final valid = <int>{};
+
+    for (int idx = 0; idx < kTotalCells; idx++) {
+      final row = idx ~/ kGridCols;
+      final col = idx % kGridCols;
+      final x0 = (col * imgW / kGridCols).floor();
+      final y0 = (row * imgH / kGridRows).floor();
+      final x1 = ((col + 1) * imgW / kGridCols).ceil().clamp(0, imgW);
+      final y1 = ((row + 1) * imgH / kGridRows).ceil().clamp(0, imgH);
+
+      bool found = false;
+      for (int y = y0; y < y1 && !found; y++) {
+        for (int x = x0; x < x1 && !found; x++) {
+          final alphaIdx = (y * imgW + x) * 4 + 3;
+          if (alphaIdx < bytes.length && bytes[alphaIdx] > 20) {
+            valid.add(idx);
+            found = true;
+          }
+        }
+      }
+    }
+
+    return valid.isEmpty ? _allCells() : valid;
+  } catch (_) {
+    // Falha silenciosa — usa todas as células como fallback
+    return _allCells();
+  }
+}
+
+// ── Estado ───────────────────────────────────────────────────────────────────
 
 class ShieldGameState {
   final List<String> wrongGuesses;   // nomes dos times errados
-  final Set<int> revealedCells;      // índices das células reveladas (0–63)
+  final Set<int> revealedCells;      // índices das células reveladas (0–95)
   final bool solved;
   final bool gameOver;
   final DateTime? startedAt;
@@ -47,11 +115,26 @@ class ShieldGameState {
   }
 }
 
+// ── Notifier ─────────────────────────────────────────────────────────────────
+
 class ShieldGameNotifier extends StateNotifier<ShieldGameState> {
   final Club target;
   final _random = Random();
 
-  ShieldGameNotifier(this.target) : super(const ShieldGameState());
+  /// Células dentro do shape do escudo — populado assincronamente.
+  /// Enquanto a análise não termina, usa todas as células como fallback.
+  Set<int> _validCells = _allCells();
+
+  ShieldGameNotifier(this.target) : super(const ShieldGameState()) {
+    _initValidCells();
+  }
+
+  Future<void> _initValidCells() async {
+    final url = target.shieldUrl;
+    if (url == null || url.isEmpty) return;
+    final valid = await _analyzeShieldCells(url);
+    _validCells = valid;
+  }
 
   void makeGuess(String clubName) {
     if (!state.canGuess) return;
@@ -59,9 +142,11 @@ class ShieldGameNotifier extends StateNotifier<ShieldGameState> {
     final now = DateTime.now();
     final startedAt = state.startedAt ?? now;
 
-    final isCorrect = clubName.trim().toLowerCase() == target.name.toLowerCase() ||
-        (target.altName != null &&
-            clubName.trim().toLowerCase() == target.altName!.toLowerCase());
+    final isCorrect =
+        clubName.trim().toLowerCase() == target.name.toLowerCase() ||
+            (target.altName != null &&
+                clubName.trim().toLowerCase() ==
+                    target.altName!.toLowerCase());
 
     if (isCorrect) {
       final elapsed = now.difference(startedAt).inSeconds;
@@ -76,10 +161,11 @@ class ShieldGameNotifier extends StateNotifier<ShieldGameState> {
       return;
     }
 
-    // Resposta errada — revela 1 célula aleatória ainda coberta
+    // Resposta errada — revela células aleatórias dentre as válidas ainda cobertas
     final newWrong = [...state.wrongGuesses, clubName];
     final newRevealed = Set<int>.from(state.revealedCells);
-    final covered = List.generate(kTotalCells, (i) => i)
+
+    final covered = _validCells
         .where((i) => !newRevealed.contains(i))
         .toList()
       ..shuffle(_random);
@@ -102,6 +188,8 @@ class ShieldGameNotifier extends StateNotifier<ShieldGameState> {
     );
   }
 }
+
+// ── Provider ─────────────────────────────────────────────────────────────────
 
 final shieldGameProvider =
     StateNotifierProvider.family<ShieldGameNotifier, ShieldGameState, Club>(

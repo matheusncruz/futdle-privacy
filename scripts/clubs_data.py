@@ -38,6 +38,43 @@ CLUBS_OVERRIDES = {
     # Argentina
     "Boca Juniors": {"primary_color": "#003087", "secondary_color": "#f5d130", "national_titles": 35, "international_titles": 6},
     "River Plate": {"primary_color": "#eb0029", "secondary_color": "#ffffff", "national_titles": 38, "international_titles": 4},
+    # Portugal
+    "Benfica": {"primary_color": "#cc0000", "secondary_color": "#ffffff", "national_titles": 38, "international_titles": 2, "alt_name": "Encarnados"},
+    "Porto": {"primary_color": "#003399", "secondary_color": "#ffffff", "national_titles": 30, "international_titles": 2, "alt_name": "Dragões"},
+    "Sporting CP": {"primary_color": "#006600", "secondary_color": "#ffffff", "national_titles": 20, "international_titles": 1, "alt_name": "Leões"},
+    "SC Braga": {"primary_color": "#cc0000", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0, "alt_name": "Guerreiros do Minho"},
+    "Vitória SC": {"primary_color": "#ffffff", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "Boavista FC": {"primary_color": "#000000", "secondary_color": "#ffffff", "national_titles": 1, "international_titles": 0},
+    "Rio Ave FC": {"primary_color": "#336600", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    "Casa Pia AC": {"primary_color": "#006633", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    "Estoril Praia": {"primary_color": "#ffff00", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "FC Famalicão": {"primary_color": "#003366", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    "Gil Vicente FC": {"primary_color": "#000000", "secondary_color": "#cc0000", "national_titles": 0, "international_titles": 0},
+    "Moreirense FC": {"primary_color": "#003399", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    "CD Nacional": {"primary_color": "#000000", "secondary_color": "#cc0000", "national_titles": 0, "international_titles": 0},
+    "CD Santa Clara": {"primary_color": "#cc0000", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    "SC Farense": {"primary_color": "#ff6600", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "FC Arouca": {"primary_color": "#ff6600", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "Estrela da Amadora": {"primary_color": "#cc0000", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "AVS Futebol SAD": {"primary_color": "#003366", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    # Brasil - Série B
+    "Sport Recife": {"primary_color": "#cc0000", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0, "alt_name": "Leão"},
+    "Ceará SC": {"primary_color": "#000000", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0, "alt_name": "Vozão"},
+    "Goiás EC": {"primary_color": "#006600", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0, "alt_name": "Esmeraldino"},
+    "Avaí FC": {"primary_color": "#003399", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    "Operário PR": {"primary_color": "#000000", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    "Guarani FC": {"primary_color": "#006600", "secondary_color": "#ffffff", "national_titles": 1, "international_titles": 0, "alt_name": "Bugre"},
+    "Paysandu SC": {"primary_color": "#003399", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0, "alt_name": "Papão"},
+    "Novorizontino": {"primary_color": "#cc0000", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "Ponte Preta": {"primary_color": "#000000", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0, "alt_name": "Macaca"},
+    "CRB": {"primary_color": "#cc0000", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "Mirassol FC": {"primary_color": "#ffcc00", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "Vila Nova FC": {"primary_color": "#cc0000", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "América MG": {"primary_color": "#006600", "secondary_color": "#ffffff", "national_titles": 1, "international_titles": 0, "alt_name": "Coelho"},
+    "Botafogo SP": {"primary_color": "#cc0000", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "Ituano FC": {"primary_color": "#cc0000", "secondary_color": "#000000", "national_titles": 0, "international_titles": 0},
+    "Brusque FC": {"primary_color": "#0000cc", "secondary_color": "#ffffff", "national_titles": 0, "international_titles": 0},
+    "Amazonas FC": {"primary_color": "#000000", "secondary_color": "#ffcc00", "national_titles": 0, "international_titles": 0},
 }
 
 LEAGUE_MAP = {
@@ -49,6 +86,8 @@ LEAGUE_MAP = {
     "Brazilian Série A": {"name": "Brasileirão Série A", "country": "Brasil", "continent": "América do Sul"},
     "Argentine Primera Division": {"name": "Liga Profesional Argentina", "country": "Argentina", "continent": "América do Sul"},
     "Mexican Primera Division": {"name": "Liga MX", "country": "México", "continent": "América do Norte"},
+    "Portuguese Primeira Liga": {"name": "Primeira Liga", "country": "Portugal", "continent": "Europa"},
+    "Brazilian Série B": {"name": "Brasileirão Série B", "country": "Brasil", "continent": "América do Sul"},
 }
 
 LEAGUE_IDS = {
@@ -60,4 +99,6 @@ LEAGUE_IDS = {
     "Brazilian Série A": "4351",
     "Argentine Primera Division": "4406",
     "Mexican Primera Division": "4350",
+    "Portuguese Primeira Liga": "4344",
+    "Brazilian Série B": "4352",
 }

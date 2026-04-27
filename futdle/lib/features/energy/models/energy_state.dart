@@ -16,7 +16,8 @@ class EnergyState {
     return EnergyState(current: newEnergy, lastRegenAt: newLastRegen);
   }
 
-  bool get canPlay => current > 0;
+  // Precisa ter ao menos 1 coração (kEnergyPerHeart unidades) para jogar
+  bool get canPlay => current >= kEnergyPerHeart;
 
   bool get isFull => current >= kMaxEnergy;
 

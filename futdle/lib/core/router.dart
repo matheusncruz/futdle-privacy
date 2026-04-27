@@ -73,6 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             mode: extra['mode'] as String? ?? 'daily',
             challengeId: extra['challengeId'] as String?,
             timeSeconds: extra['timeSeconds'] as int? ?? 0,
+            streak: extra['streak'] as int? ?? 0,
           );
         },
       ),

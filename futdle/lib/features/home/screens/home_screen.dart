@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../energy/widgets/energy_bar.dart';
 import '../../energy/providers/energy_provider.dart';
 import '../../game/providers/today_progress_provider.dart';
+import '../../game/providers/streak_provider.dart';
+import '../../game/providers/clubs_provider.dart';
 import '../../shield/providers/shield_free_club_provider.dart';
 import '../../shield/providers/shield_today_progress_provider.dart';
 import '../../../core/theme.dart';
@@ -63,6 +65,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final todayAsync = ref.watch(todayProgressProvider);
+    final streakAsync = ref.watch(streakProvider);
+    final currentStreak = streakAsync.valueOrNull?.current ?? 0;
 
     return Scaffold(
       backgroundColor: kBackground,
@@ -92,7 +96,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _HeroSection(dateLabel: _formattedDate()),
+            _HeroSection(dateLabel: _formattedDate(), streak: currentStreak),
 
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
@@ -196,6 +200,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             return;
                           }
                           await ref.read(energyProvider.notifier).consume();
+                          // Invalida o cache para sortear um novo clube a cada partida
+                          ref.invalidate(randomClubProvider);
                           if (context.mounted) context.push('/game?mode=free');
                         },
                       ),
@@ -242,7 +248,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
 class _HeroSection extends StatelessWidget {
   final String dateLabel;
-  const _HeroSection({required this.dateLabel});
+  final int streak;
+  const _HeroSection({required this.dateLabel, this.streak = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -352,6 +359,25 @@ class _HeroSection extends StatelessWidget {
                   ),
                 ),
               ),
+              if (streak > 0) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFf97316).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFf97316).withOpacity(0.35)),
+                  ),
+                  child: Text(
+                    '🔥 $streak dia${streak == 1 ? '' : 's'} acertando',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFfb923c),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
