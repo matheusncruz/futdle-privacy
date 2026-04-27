@@ -58,6 +58,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             clubName: extra['clubName'] as String,
             shieldUrl: extra['shieldUrl'] as String,
             timeSeconds: extra['timeSeconds'] as int? ?? 0,
+            challengeId: extra['challengeId'] as String?,
           );
         },
       ),

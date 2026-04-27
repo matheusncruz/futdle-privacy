@@ -177,7 +177,19 @@ class _LeaderboardWidget extends ConsumerWidget {
         padding: EdgeInsets.all(16),
         child: CircularProgressIndicator(),
       )),
-      error: (e, _) => const SizedBox.shrink(),
+      error: (e, _) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1F2937),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Center(
+          child: Text(
+            'Não foi possível carregar o ranking.',
+            style: TextStyle(color: kTextSecondary, fontSize: 13),
+          ),
+        ),
+      ),
       data: (entries) {
         if (entries.isEmpty) {
           return Container(
