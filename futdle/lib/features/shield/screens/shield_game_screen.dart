@@ -77,14 +77,15 @@ class _ShieldGameView extends ConsumerWidget {
     ref.listen(shieldGameProvider(club), (prev, next) {
       if (next.gameOver && !(prev?.gameOver ?? false)) {
         // Salva progresso do desafio diário
+        String? dailyChallengeId;
         if (mode == 'daily') {
-          final challengeId = ref
+          dailyChallengeId = ref
               .read(shieldTodayProgressProvider)
               .valueOrNull
               ?.challengeId;
-          if (challengeId != null) {
+          if (dailyChallengeId != null) {
             _saveShieldProgress(
-              challengeId: challengeId,
+              challengeId: dailyChallengeId,
               solved: next.solved,
               wrongCount: next.wrongCount,
               timeSeconds: next.elapsedSeconds,
@@ -102,6 +103,7 @@ class _ShieldGameView extends ConsumerWidget {
             'shieldUrl': club.shieldUrl ?? '',
             'timeSeconds': next.elapsedSeconds,
             'mode': mode,
+            'challengeId': dailyChallengeId,
           });
         });
       }
