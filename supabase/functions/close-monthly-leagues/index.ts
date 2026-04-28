@@ -28,16 +28,20 @@ Deno.serve(async (_req) => {
 
     if (error || !top3 || top3.length === 0) continue
 
-    // 2. Copy rankings to monthly_results
-    await supabase.from('monthly_results').insert(
+    // 2. Copy rankings to monthly_results (idempotent)
+    const { error: resultsError } = await supabase.from('monthly_results').upsert(
       top3.map((row, i) => ({
         user_id:      row.user_id,
         mode,
         month:        monthStr,
         final_points: row.total_points,
         rank:         i + 1,
-      }))
+      })),
+      { onConflict: 'user_id,mode,month' }
     )
+    if (resultsError) {
+      console.error(`monthly_results upsert error (${mode}):`, resultsError.message)
+    }
 
     // 3. Award trophies to top 3
     const typeMap: Record<number, string> = {

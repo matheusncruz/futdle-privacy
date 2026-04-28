@@ -33,12 +33,17 @@ Deno.serve(async (_req) => {
 
     if (!scores || scores.length === 0) continue
 
-    await supabase.from('user_trophies').upsert({
+    // Use month-start date for consistency with official league trophies
+    const monthStart = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-01`
+    const { error: trophyError } = await supabase.from('user_trophies').upsert({
       user_id:    scores[0].user_id,
       type:       'friend_champion',
-      month:      yesterdayStr,
+      month:      monthStart,
       awarded_at: new Date().toISOString(),
     }, { onConflict: 'user_id,type,month' })
+    if (trophyError) {
+      console.error(`friend_champion trophy error (league ${league.id}):`, trophyError.message)
+    }
   }
 
   return new Response(JSON.stringify({ ok: true, closed: leagues.length }), {
