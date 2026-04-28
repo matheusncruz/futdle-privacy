@@ -21,10 +21,11 @@ CREATE TABLE league_scores (
 CREATE TABLE monthly_results (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  mode         text NOT NULL,
+  mode         text NOT NULL CHECK (mode IN ('classic', 'shield')),
   month        date NOT NULL,
   final_points int  NOT NULL,
-  rank         int  NOT NULL
+  rank         int  NOT NULL,
+  UNIQUE (user_id, mode, month)
 );
 
 -- Trophies earned by users
@@ -46,7 +47,8 @@ CREATE TABLE friend_leagues (
   mode        text NOT NULL CHECK (mode IN ('classic', 'shield', 'both')),
   entry_mode  text NOT NULL DEFAULT 'open' CHECK (entry_mode IN ('open', 'approval')),
   starts_at   date NOT NULL,
-  ends_at     date NOT NULL
+  ends_at     date NOT NULL,
+  CHECK (ends_at > starts_at)
 );
 
 -- League membership + join requests
@@ -117,5 +119,20 @@ CREATE POLICY "fls_read_public"
 CREATE POLICY "fls_insert_own"
   ON friend_league_scores FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "fls_update_own"
-  ON friend_league_scores FOR UPDATE USING (auth.uid() = user_id);
+-- ── Indexes ──────────────────────────────────────────────────────────────────
+
+-- league_scores: leaderboard queries by mode+month, and trigger upsert by user
+CREATE INDEX league_scores_mode_month_idx ON league_scores (mode, month, total_points DESC);
+CREATE INDEX league_scores_user_id_idx    ON league_scores (user_id);
+
+-- monthly_results: history queries
+CREATE INDEX monthly_results_mode_month_idx ON monthly_results (mode, month);
+
+-- user_trophies: profile display
+CREATE INDEX user_trophies_user_id_idx ON user_trophies (user_id);
+
+-- friend_league_members: trigger join (leagues this user is approved in)
+CREATE INDEX friend_league_members_user_id_idx ON friend_league_members (user_id);
+
+-- friend_league_scores: ranking queries by league
+CREATE INDEX friend_league_scores_league_id_idx ON friend_league_scores (league_id, total_points DESC);
