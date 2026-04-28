@@ -16,6 +16,7 @@ int shieldPoints(int wrongCount) {
 /// given [alreadyAwarded] bonus points were previously awarded this month.
 /// Milestones: 10 days → +50, 20 days → +100, 30 days → +200.
 int streakBonusDelta(int currentStreak, int alreadyAwarded) {
+  if (alreadyAwarded < 0) alreadyAwarded = 0;
   if (currentStreak >= 30 && alreadyAwarded < 350) return 350 - alreadyAwarded;
   if (currentStreak >= 20 && alreadyAwarded < 150) return 150 - alreadyAwarded;
   if (currentStreak >= 10 && alreadyAwarded < 50)  return 50  - alreadyAwarded;

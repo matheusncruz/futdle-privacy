@@ -27,5 +27,6 @@ void main() {
     test('no double bonus at day 20',     () => expect(streakBonusDelta(20, 150), 0));
     test('+200 pts at day 30',            () => expect(streakBonusDelta(30, 150), 200));
     test('no double bonus at day 30',     () => expect(streakBonusDelta(30, 350), 0));
+    test('negative alreadyAwarded treated as 0', () => expect(streakBonusDelta(10, -1), 50));
   });
 }
