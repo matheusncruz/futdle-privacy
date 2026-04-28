@@ -13,6 +13,7 @@ CREATE OR REPLACE FUNCTION _update_league_score(
 ) RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_date          date;
