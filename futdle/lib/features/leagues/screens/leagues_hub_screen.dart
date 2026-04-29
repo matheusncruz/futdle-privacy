@@ -6,6 +6,7 @@ import '../../../core/theme.dart';
 import '../providers/official_league_provider.dart';
 import '../providers/friend_leagues_provider.dart';
 import '../models/friend_league.dart';
+import '../models/league_score.dart';
 
 class LeaguesHubScreen extends ConsumerWidget {
   const LeaguesHubScreen({super.key});
