@@ -4,6 +4,8 @@ import '../../../core/theme.dart';
 import '../../../core/supabase_client.dart';
 import '../providers/stats_provider.dart';
 import '../../auth/widgets/auth_modal.dart';
+import '../../leagues/providers/trophies_provider.dart';
+import '../../leagues/models/trophy.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -96,6 +98,39 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+
+              const SizedBox(height: 32),
+
+              // ── Trophies ─────────────────────────────────────────────────────────
+              Consumer(builder: (context, ref, _) {
+                final trophiesAsync = ref.watch(userTrophiesProvider);
+                return trophiesAsync.when(
+                  loading: () => const SizedBox.shrink(),
+                  error:   (_, __) => const SizedBox.shrink(),
+                  data: (trophies) {
+                    if (trophies.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'TROFÉUS',
+                          style: TextStyle(
+                              color: kTextSecondary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: trophies.map((t) => _TrophyChip(trophy: t)).toList(),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }),
 
               const SizedBox(height: 32),
 
@@ -253,6 +288,36 @@ class _Badge extends StatelessWidget {
                       color: kTextSecondary, fontSize: 12)),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrophyChip extends StatelessWidget {
+  final UserTrophy trophy;
+  const _TrophyChip({required this.trophy});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F2937),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Text(trophy.emoji, style: const TextStyle(fontSize: 28)),
+          const SizedBox(height: 4),
+          Text(trophy.label,
+              style: const TextStyle(
+                  color: kTextSecondary,
+                  fontSize: 10),
+              textAlign: TextAlign.center),
+          Text(trophy.monthLabel,
+              style: const TextStyle(
+                  color: Color(0xFF4B5563), fontSize: 10)),
         ],
       ),
     );
