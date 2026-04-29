@@ -234,6 +234,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Ligas ────────────────────────────────────────────────────────────
+                  InkWell(
+                    onTap: () => context.push('/leagues'),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      decoration: BoxDecoration(
+                        color: kSurface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                            color: const Color(0xFFf59e0b).withOpacity(0.35)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFf59e0b).withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.emoji_events_rounded,
+                                color: Color(0xFFf59e0b), size: 22),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('🏆 Ligas',
+                                    style: TextStyle(
+                                        color: kTextPrimary,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold)),
+                                SizedBox(height: 2),
+                                Text('Ranking oficial e ligas de amigos',
+                                    style: TextStyle(
+                                        color: kTextSecondary, fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              color: Color(0xFFf59e0b), size: 14),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
