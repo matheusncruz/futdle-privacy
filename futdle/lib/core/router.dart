@@ -8,6 +8,11 @@ import '../features/profile/screens/profile_screen.dart';
 import '../features/auth/screens/nickname_screen.dart';
 import '../features/shield/screens/shield_game_screen.dart';
 import '../features/shield/screens/shield_result_screen.dart';
+import '../features/leagues/screens/leagues_hub_screen.dart';
+import '../features/leagues/screens/official_league_screen.dart';
+import '../features/leagues/screens/create_league_screen.dart';
+import '../features/leagues/screens/join_league_screen.dart';
+import '../features/leagues/screens/friend_league_screen.dart';
 import '../main.dart' show appUserHasNickname;
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -76,6 +81,32 @@ final routerProvider = Provider<GoRouter>((ref) {
             timeSeconds: extra['timeSeconds'] as int? ?? 0,
             streak: extra['streak'] as int? ?? 0,
           );
+        },
+      ),
+      GoRoute(
+        path: '/leagues',
+        builder: (context, state) => const LeaguesHubScreen(),
+      ),
+      GoRoute(
+        path: '/leagues/official/:mode',
+        builder: (context, state) {
+          final mode = state.pathParameters['mode'] ?? 'classic';
+          return OfficialLeagueScreen(mode: mode);
+        },
+      ),
+      GoRoute(
+        path: '/leagues/create',
+        builder: (context, state) => const CreateLeagueScreen(),
+      ),
+      GoRoute(
+        path: '/leagues/join',
+        builder: (context, state) => const JoinLeagueScreen(),
+      ),
+      GoRoute(
+        path: '/leagues/friend/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return FriendLeagueScreen(leagueId: id);
         },
       ),
     ],
