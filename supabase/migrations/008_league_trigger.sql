@@ -105,9 +105,10 @@ BEGIN
     current_streak = v_new_streak;
 
   -- Update friend league scores for active leagues the user is in
-  IF v_points > 0 THEN
+  -- Include v_bonus_delta so streak milestones count in friend leagues too
+  IF v_points > 0 OR v_bonus_delta > 0 THEN
     INSERT INTO friend_league_scores (league_id, user_id, total_points)
-    SELECT fl.id, p_user_id, v_points
+    SELECT fl.id, p_user_id, v_points + v_bonus_delta
     FROM friend_leagues fl
     JOIN friend_league_members flm ON flm.league_id = fl.id
     WHERE flm.user_id  = p_user_id
@@ -116,7 +117,7 @@ BEGIN
       AND fl.ends_at   >= CURRENT_DATE
       AND (fl.mode = p_mode OR fl.mode = 'both')
     ON CONFLICT (league_id, user_id) DO UPDATE SET
-      total_points = friend_league_scores.total_points + v_points;
+      total_points = friend_league_scores.total_points + v_points + v_bonus_delta;
   END IF;
 END;
 $$;
